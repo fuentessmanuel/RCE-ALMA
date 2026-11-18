@@ -1,130 +1,130 @@
 # PRD — Llavero cifrado: conectar un PC de la estación con la contraseña de la unidad
 
-**Estado:** Borrador para revisión de Diego · **Dueño:** Diego Melo (repo y decisión) · propone Manuel Fuentes · **Creado:** 16-nov-2026 · base `main` = `a855a6a`
+**Estado:** Borrador v2 (versión mínima) para revisión de Diego · **Dueño:** Diego Melo (repo y decisión) · propone Manuel Fuentes · **Creado:** 16-nov-2026 · **Revisado:** 17-nov-2026 · base `main` = `a855a6a`
 
-**Alcance:** conectar o reconectar un **PC de la estación** (las dos llaves) escribiendo la contraseña de la unidad, durante una ventana abierta desde el editor de Apps Script. Incluye guardar ese llavero cifrado, republicarlo cuando se rotan las llaves y corregir el mensaje de «llave antigua» en un PC.
+**Alcance:** un PC de la estación sin llaves, o con llaves viejas, se conecta escribiendo **solo la contraseña de la unidad**. El servidor la comprueba, con límite de intentos, y recién entonces entrega las llaves cifradas.
 
-**NO toca:** los celulares (siguen con su enlace, que nunca lleva la llave de estación) · el login personal correo + contraseña · el cifrado de nombres y RUT que ya existe · el primer PC de la unidad (sigue con «Configurar este PC como el primero») · el límite de intentos del login (va en su propio PRD, ver P05).
+**NO toca:** los celulares (siguen con su enlace, que nunca lleva la llave de estación) · el login personal (correo + contraseña) · el cifrado de nombres y RUT · el primer PC de una unidad nueva (sigue con «Configurar este PC como el primero») · el enlace «Copiar enlace para otro PC» (queda como plan B).
+
+> **Qué cambió respecto del borrador v1 (16-nov):** se eliminó la ventana de 15 minutos que abría alguien desde el editor. En la v1, durante esa ventana, cualquiera con la URL `/exec` podía llevarse el llavero y adivinar la contraseña en su propio computador sin límite. En la v2 el llavero **nunca** sale sin que el servidor haya comprobado la contraseña: es más seguro y no depende de ninguna persona.
 
 ---
 
 ## 1 · Resumen
 
-**Hoy:** para conectar un PC, o reconectarlo cuando dice «llave antigua», hace falta otro PC ya conectado, copiar un enlace con las dos llaves y llevarlo a mano (correo, pendrive) hasta el PC nuevo.
+**Hoy:** para conectar o reconectar un PC hace falta otro PC conectado, copiar un enlace que es la llave completa de la unidad y llevarlo a mano (correo, pendrive).
 
-**Después:** alguien con acceso al editor abre la ventana; en el PC se escribe la contraseña de la unidad —la misma que ese PC ya iba a pedir para ver nombres— y queda conectado, con nombres incluidos. Nadie transporta llaves.
+**Después:** en el PC se escribe la contraseña de la unidad y queda conectado, con nombres incluidos. Nadie más tiene que hacer nada.
 
 ## 2 · La historia
 
-**ANTES.** Domingo 16 de noviembre. Manuel se sienta en un PC de la unidad para revisar las camas. Escribe su correo y su contraseña y Kaptus le contesta: «Este equipo tiene una llave antigua de la app… Abre de nuevo el enlace para celulares». Está en un PC, no en un celular. Su contraseña está bien; lo que está vieja es la llave del navegador, porque en algún momento se crearon llaves nuevas. Para arreglarlo tiene que encontrar otro PC que sí funcione, entrar a Estado → «Llaves de la unidad», copiar un enlace que ES la llave completa de la unidad, mandárselo por correo o pasarlo en un pendrive, pegarlo pegado al final de la dirección /exec sin que se corte, y después escribir igual la contraseña de la unidad para ver los nombres. Si ningún PC tiene las llaves vigentes, no hay arreglo sin Diego y sin reconectar a todos. Ese turno no revisó las camas en ese PC.
+**ANTES.** Domingo 16 de noviembre. Manuel se sienta en un PC de la unidad. Escribe su correo y su contraseña y Kaptus le contesta: «Este equipo tiene una llave antigua de la app… Abre de nuevo el enlace para celulares». Está en un PC, no en un celular, y su contraseña está bien: lo viejo es la llave guardada en ese navegador, porque en algún momento se crearon llaves nuevas. Para arreglarlo tiene que encontrar otro PC que sí funcione, sacar de ahí un enlace que ES la llave de la unidad, mandárselo por correo o pasarlo en un pendrive, pegarlo al final de la dirección `/exec` sin que se corte y, después, escribir igual la contraseña de la unidad para ver los nombres. Ese turno no revisó las camas en ese PC.
 
-**DESPUÉS.** Mismo PC, mismo aviso. Manuel le escribe a Diego —o a quien tenga el editor—: «abre la ventana de conexión». Diego ejecuta `abrirConexionPc` desde el celular o su casa. En el PC, Manuel pulsa «Conectar este PC a la unidad», escribe la contraseña de la unidad y en unos segundos el PC queda con las dos llaves y con los nombres visibles. No pasó ningún enlace por correo ni por pendrive. Cuando Diego rota las llaves porque un enlace circuló de más, los demás PC se reconectan igual: ventana + contraseña.
+**DESPUÉS.** Mismo PC, mismo aviso. Debajo aparece «Conectar este PC con la contraseña de la unidad». Manuel la escribe —la misma que ese PC le iba a pedir de todos modos para ver nombres— y en unos segundos el PC queda conectado y con los nombres visibles. No tuvo que llamar a nadie, ni buscar otro PC, ni mover un enlace.
 
 ## 3 · Objetivos / No-objetivos
 
-- **O1** Conectar un PC de la estación sin un segundo PC y sin transportar enlaces: basta la ventana abierta y la contraseña de la unidad.
-- **O2** Que Google siga sin poder leer las llaves: en el servidor queda solo un bloque cifrado con la contraseña de la unidad, igual que nombres y RUT.
-- **O3** Que rotar las llaves no obligue a repartir enlaces a todos los PC: el llavero se vuelve a publicar solo al rotar.
-- **O4** Que conectar y poner la contraseña de la unidad sean un solo paso en un PC nuevo.
-- **O5** Que el aviso de «llave antigua» en un PC diga qué hacer en un PC (hoy manda al enlace de celulares).
+- **O1** Conectar un PC de la estación con un solo dato, la contraseña de la unidad, sin ninguna otra persona ni otro PC.
+- **O2** Que nadie pueda llevarse las llaves sin saber la contraseña, y que adivinarla esté limitado a unos pocos intentos por hora.
+- **O3** Que Google siga sin poder leer las llaves ni la contraseña.
+- **O4** Que conectar e instalar la contraseña de la unidad sean un solo paso.
+- **O5** Que, después de crear llaves nuevas, los demás PC se reconecten igual: con la contraseña.
+- **O6** Que en un PC el aviso de «llave antigua» diga qué hacer en un PC.
 
-- **NO1** No cambia cómo se conectan los celulares. El llavero jamás se entrega a un celular ni a la PWA de GitHub Pages: solo dentro de `/exec#estacion`.
-- **NO2** No reemplaza al enlace «Copiar enlace para otro PC»: sigue existiendo como plan B.
+- **NO1** No cambia cómo se conectan los celulares. La opción no existe en la PWA de celulares.
+- **NO2** No se agrega ninguna ventana, botón de coordinación ni paso en el editor.
 - **NO3** No cambia el cifrado de nombres y RUT ni la contraseña de la unidad.
-- **NO4** No abre una vía permanente: sin ventana abierta desde el editor, el llavero no se entrega.
-- **NO5** No toca el login personal ni su límite de intentos.
+- **NO4** No incluye avisos ni alertas a otros PC (queda como P03).
+- **NO5** No toca el login personal (su límite de intentos va aparte, ver P04).
 
 ## 4 · Cómo funciona hoy → cómo va a funcionar
 
 ```
-HOY                                              DESPUÉS
-───                                              ───────
-PC nuevo / «llave antigua»                       PC nuevo / «llave antigua»
-   │                                                │
-   ▼                                                ▼
-buscar un PC que funcione                        quien tiene el editor ejecuta
-   │                                             abrirConexionPc  (ventana 15 min)
-   ▼                                                │
-Estado → Llaves de la unidad →                      ▼
-«Copiar enlace para otro PC»                     en el PC: /exec#estacion →
-   │                                             «Conectar este PC a la unidad»
-   ▼                                                │
-llevarlo por correo / pendrive                      ▼
-   │                                             escribe la contraseña de la unidad
-   ▼                                                │
-pegarlo al final de /exec                           ▼
-   │                                             el PC baja el llavero cifrado,
-   ▼                                             lo abre con la contraseña y guarda
-Estado → «Contraseña de la unidad»               las dos llaves + la contraseña
-   │                                                │
-   ▼                                                ▼
-conectado con nombres                            conectado con nombres
+HOY                                         DESPUÉS
+───                                         ───────
+PC con «llave antigua»                      PC con «llave antigua»
+   │                                           │
+   ▼                                           ▼
+buscar otro PC que funcione                 «Conectar este PC con la contraseña
+   │                                         de la unidad» → la escribe
+   ▼                                           │
+Estado → Llaves de la unidad →                 ▼
+«Copiar enlace para otro PC»                el servidor comprueba la contraseña
+   │                                         (con límite de intentos)
+   ▼                                           │
+llevarlo por correo / pendrive                 ├─ no coincide → no entrega nada,
+   │                                           │   cuenta el intento
+   ▼                                           ▼
+pegarlo al final de /exec                   entrega el llavero cifrado
+   │                                           │
+   ▼                                           ▼
+Estado → «Contraseña de la unidad»          el PC lo abre con la contraseña y
+   │                                         guarda las llaves y la contraseña
+   ▼                                           │
+conectado con nombres                          ▼
+                                            conectado con nombres
 ```
+
+**Lo que se publica solo, sin que nadie lo haga a mano:** cada vez que un PC conectado instala la contraseña de la unidad o crea llaves nuevas, sube el llavero y la huella de comprobación. En una unidad que ya funciona, basta con que un PC conectado abra Estado una vez después de la actualización (ver P02).
 
 **Piezas que ya existen y se reutilizan:**
 
 | Pieza | Dónde vive | Para qué sirve aquí |
 |---|---|---|
-| Cifrado AES-GCM + PBKDF2 (600.000 iteraciones) con la contraseña de la unidad | `src/core/cifrado.ts` | Cerrar y abrir el llavero |
-| Ventana de 15 minutos desde el editor (`REGISTRO_LLAVES_HASTA`) | `Codigo.gs` `abrirRegistroLlaves` | Molde para la ventana de conexión |
-| Llamada al servidor sin llave, por `google.script.run` | `servicios.ts` `configurarPrimerPc` | Molde para pedir el llavero desde un PC sin llaves |
-| Guardado de llaves en el navegador (meta `conexion` y `tokenEstacion`) | `servicios.ts` | Donde quedan las llaves al abrir el llavero |
-| Instalación de la contraseña (`instalarContrasena`, fila `_verificacion`) | `claveUnidad.ts`, `referencias.ts` | Se ejecuta justo después de conectar (O4) |
-| Registro de auditoría | `Codigo.gs` `registrarAuditoria` | Dejar rastro de cada entrega del llavero |
-| Creación y rotación de llaves | `PanelLlave.tsx`, `llaves.ts` | Momento en que se publica o republica el llavero |
+| Cifrado AES-GCM + PBKDF2 (600.000 iteraciones) | `src/core/cifrado.ts` | Cerrar y abrir el llavero; derivar la huella de comprobación |
+| Llamada al servidor sin llave (`google.script.run`) | `servicios.ts` `configurarPrimerPc` | Molde para pedir el llavero desde un PC sin llaves |
+| Dónde quedan las llaves en el PC (meta `conexion` y `tokenEstacion`) | `servicios.ts` | Mismo lugar, sin cambios |
+| Instalación de la contraseña (`instalarContrasena`) | `claveUnidad.ts` | Se ejecuta en el mismo paso (O4) |
+| Huellas en propiedades del script, como `APP_TOKEN_HASH` | `Codigo.gs` | Mismo lugar para la huella de comprobación y el contador |
+| Registro de auditoría | `Codigo.gs` `registrarAuditoria` | Una fila por entrega y por intento fallido |
 
 ## 5 · Los datos
 
-**Disparadores**
-- *Publicar el llavero:* un PC de la estación que tiene las dos llaves y la contraseña de la unidad instalada. Ocurre al crear las llaves en el primer PC, al pulsar «Crear llaves nuevas…», y a mano desde Estado («Publicar el llavero») para unidades que ya funcionan hoy.
-- *Entregar el llavero:* un PC sin llaves (o con llaves viejas) que lo pide mientras la ventana de conexión está abierta.
+**En el servidor (propiedades del script, no en la hoja)**
+- **`LLAVERO`**: un bloque cifrado (~400 bytes) con la llave de la app y la de estación. ← No va en la hoja `referencia`: ahí contaría como paciente (`soloEpisodios` solo excluye `_verificacion`) y lo borraría `limpiarTodo_`.
+- **`LLAVERO_COMPROBACION`**: la huella de la contraseña con la que el servidor compara. Se deriva de la contraseña con **otra etiqueta** que la llave del llavero, de modo que **con la huella no se puede abrir el llavero**. ← Esto es lo que impide que Google, o quien lea las propiedades, abra las llaves.
+- **`LLAVERO_FALLOS`**: cuántos intentos fallidos van y desde cuándo. ← El candado contra adivinar.
 
-**En el servidor (Apps Script)**
-- **Propiedad del script `LLAVERO`:** un solo bloque cifrado (formato `v1.<iv>.<datos>` de `cifrado.ts`, ~400 bytes) que contiene la llave de la app y la de estación, más la fecha de publicación. ← Va en propiedades del script y **no** en la hoja `referencia`: ahí una fila nueva contaría como paciente (`soloEpisodios` solo excluye `_verificacion`) y la borraría `limpiarTodo_`.
-- **Propiedad `CONEXION_PC_HASTA`:** fecha y hora de cierre de la ventana de conexión. ← Separada de `REGISTRO_LLAVES_HASTA` a propósito: la ventana de registro se cierra al primer uso y **rota** las llaves; la de conexión solo **entrega** el llavero y no rota nada.
-- **Hoja `auditoria`:** una fila por cada entrega del llavero (`llavero_entregado`) y por cada publicación (`llavero_publicado`), sin datos personales.
-- **Acciones nuevas:** una para publicar el llavero (exige llave de estación) y una para pedirlo (sin llave, solo con ventana abierta). Es la segunda acción sin llave del servidor, después de `registrarLlaves`.
+**Las dos acciones nuevas del servidor**
+- *Publicar el llavero*: exige la llave de estación. Guarda `LLAVERO` y `LLAVERO_COMPROBACION`.
+- *Pedir el llavero*: es una acción sin llave, como `registrarLlaves`. Recibe la huella, la compara y entrega el llavero solo si coincide y el candado no está cerrado.
 
-**En el PC**
-- Las llaves quedan donde ya quedan hoy (meta `conexion` y `tokenEstacion`); la contraseña de la unidad, donde ya queda (`claveUnidad`).
-- Nada nuevo se guarda en el navegador.
+**En el PC:** nada nuevo. Las llaves y la contraseña quedan donde ya quedan.
 
 **Candados**
-- Sin ventana abierta, el servidor no entrega el llavero (NO4).
-- La ventana se cierra sola a los 15 minutos (P02: si además se cierra a las N entregas).
-- Si las llaves cambian y nadie republica, el llavero quedaría con llaves viejas: por eso «Crear llaves nuevas…» lo republica en el mismo paso, y la entrega comprueba que la llave descifrada sea la vigente antes de dar el PC por conectado.
+- Sin la huella correcta, el servidor no entrega el llavero: no hay forma de bajarlo para adivinar en otro computador.
+- **5 intentos fallidos en una hora cierran la entrega por una hora**, y se reabre sola.
+- El llavero se reemplaza entero en cada publicación: si se crean llaves nuevas, el llavero viejo deja de existir en el mismo paso.
 
 ## 6 · Reglas, promesas y pendientes — el acuerdo
 
 **Reglas**
-- **R1** Solo un PC de la estación con las dos llaves y la contraseña de la unidad instalada puede publicar el llavero.
-- **R2** El llavero se entrega solo mientras la ventana de conexión esté abierta, y la ventana solo se abre desde el editor de Apps Script, por quien tenga acceso a él.
-- **R3** El llavero solo se ofrece en la vista de estación servida desde `/exec`. La PWA de celulares no muestra el botón ni conoce la acción.
-- **R4** El PC abre el llavero en el navegador con la contraseña escrita; si la contraseña no sirve, no guarda nada y lo dice («Contraseña incorrecta o llavero de otra unidad»).
-- **R5** Al abrir el llavero, antes de darse por conectado, el PC comprueba con el servidor que las dos llaves sean las vigentes. Si no lo son, avisa «El llavero tiene llaves viejas: pide que se publique de nuevo desde un PC conectado».
-- **R6** En el mismo paso queda instalada la contraseña de la unidad (O4); no se pide dos veces.
-- **R7** Rotar las llaves con «Crear llaves nuevas…» republica el llavero en ese mismo paso, cifrado con la contraseña ya instalada en ese PC.
-- **R8** En un PC, el aviso de «llave antigua» dice: «Pide que abran la ventana de conexión y pulsa “Conectar este PC a la unidad”, o abre el enlace para otro PC que muestra un PC conectado». En un celular sigue diciendo lo de hoy.
-- **R9** Cada entrega y cada publicación queda en la auditoría.
+- **R1** Solo un PC con la llave de estación y la contraseña de la unidad instalada puede publicar el llavero.
+- **R2** El llavero se publica solo al instalar la contraseña de la unidad y al crear llaves nuevas; nadie tiene que acordarse.
+- **R3** El servidor entrega el llavero únicamente si la huella coincide. Si no coincide, responde lo mismo que si no existiera llavero y cuenta el intento.
+- **R4** Con 5 intentos fallidos en una hora, la entrega se cierra una hora. El PC lo dice: «Demasiados intentos. Vuelve a probar en una hora, o usa el enlace para otro PC».
+- **R5** Al abrir el llavero, el PC comprueba que las llaves sean las vigentes antes de darse por conectado, y en el mismo paso instala la contraseña de la unidad.
+- **R6** La opción solo aparece en la vista de estación servida desde `/exec`, nunca en la PWA de celulares.
+- **R7** En un PC, el aviso de «llave antigua» dice: «Conecta este PC con la contraseña de la unidad, o abre el enlace para otro PC». En un celular dice lo de hoy.
+- **R8** Cada entrega y cada intento fallido quedan en la auditoría.
 
 **Promesas**
-- Google nunca recibe las llaves ni la contraseña en claro: solo el bloque cifrado y, como hoy, sus huellas.
+- Google nunca tiene las llaves ni la contraseña en claro, y la huella que guarda no sirve para abrir el llavero.
+- Nadie puede bajar el llavero sin saber la contraseña.
 - Un celular nunca recibe la llave de estación.
-- Sin ventana abierta, pedir el llavero no devuelve nada útil, ni siquiera si existe.
 - El enlace «Copiar enlace para otro PC» sigue funcionando igual.
 
-**El riesgo que este diseño agrega, dicho de frente**
-Hoy el bloque `_verificacion` solo sirve para comprobar la contraseña y lo lee quien ya tiene la llave de estación. El llavero, en cambio, **contiene las llaves**, y durante la ventana lo puede bajar cualquiera que tenga la URL `/exec` (que no es secreta). Con ese bloque, alguien podría intentar adivinar la contraseña de la unidad en su propio computador, sin límite de intentos. Lo frenan tres cosas: la ventana corta, las 600.000 iteraciones de PBKDF2 y el largo de la contraseña. **La tercera es la que decide**: con una contraseña de 8 caracteres comunes el freno es débil; con una frase larga es fuerte. Por eso P01.
+**Lo que hay que saber, dicho de frente**
+- Apps Script no sabe desde qué computador viene cada intento, así que el límite es **para toda la unidad**. Alguien con la URL `/exec` podría gastar los 5 intentos a propósito y dejar una hora sin poder conectar PC nuevos. No roba nada, y los PC ya conectados siguen funcionando.
+- Si alguien entra a la cuenta de Google dueña del proyecto, esto no lo protege; pero en ese caso ya tiene la planilla entera, así que no es un riesgo nuevo.
 
 **Pendientes (decide Diego)**
-- **P01** Largo mínimo de la contraseña de la unidad para habilitar el llavero (hoy el mínimo general es 8). Propuesta: no publicar el llavero si la contraseña tiene menos de 14 caracteres, y avisar en Estado. *Mientras no se decida: el llavero no se publica.*
-- **P02** ¿La ventana se cierra también tras N entregas (propuesta: 3), o solo por tiempo? *Mientras tanto: solo por tiempo.*
-- **P03** ¿Sal propia y aleatoria para el llavero, en vez de la sal fija `upc-pulse/identidad/v1`? Con sal fija, un mismo trabajo de adivinanza sirve para el llavero y para cualquier bloque de identidad. Propuesta: sal aleatoria guardada junto al llavero. *Mientras tanto: sal propia (no cambia nada de lo ya cifrado).*
-- **P04** ¿Quién abre la ventana? Hoy solo el dueño del editor. Si se quiere que coordinación lo haga sin editor, es otro diseño. *Mientras tanto: solo desde el editor.*
-- **P05** El límite de intentos del login personal y el largo del PIN quedan para su propio PRD (hallazgo de la auditoría del 16-nov).
-- **P06** Las unidades que ya funcionan publican su primer llavero a mano desde Estado. ¿Se agrega un aviso en Estado mientras no haya llavero publicado? *Propuesta: sí.*
+- **P01** ¿5 intentos por hora le parece bien a la unidad? *Mientras tanto: 5.*
+- **P02** Unidades que ya funcionan: el primer llavero se publica cuando un PC conectado vuelve a instalar la contraseña. ¿Se hace solo al abrir Estado, si ese PC ya tiene la contraseña instalada? *Propuesta: sí, sin preguntar.*
+- **P03** ¿Avisar en los PC conectados cuando se conecta uno nuevo («se conectó un PC hoy a las 14:32»)? *Mientras tanto: solo queda en la auditoría.*
+- **P04** El mismo candado de intentos podría proteger el login personal, hallazgo de la auditoría del 16-nov. Va en su propio PRD, pero conviene programarlos juntos.
 
 **Cómo se prueba (para el PR que lo implemente)**
-- Tests unitarios: cerrar y abrir el llavero; contraseña equivocada; llavero con llaves viejas; republicación al rotar.
-- `npm run e2e:gas`: ampliar el escenario del segundo PC (hoy entra por `#estacion?a=..&t=..`) con uno que entre por ventana + contraseña, y otro que lo intente con la ventana cerrada.
-- Despliegue: hay que pegar el `Codigo.gs` nuevo y el `index.html` cohete, y publicar versión nueva sobre la implementación existente.
+- Tests unitarios: publicar y pedir el llavero; contraseña equivocada no entrega nada; la huella no abre el llavero; el candado cierra a los 5 fallos y se reabre a la hora; crear llaves nuevas republica el llavero.
+- `npm run e2e:gas`: un segundo PC que se conecta solo con la contraseña, y otro que lo intenta con la contraseña equivocada.
+- Despliegue: pegar el `Codigo.gs` nuevo y el `index.html` cohete, y publicar versión nueva sobre la implementación existente.
